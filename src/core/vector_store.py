@@ -3,6 +3,7 @@ import numpy as np
 from typing import List, Dict, Any, Optional
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import normalize
 
 class VectorStore:
     """
@@ -24,6 +25,7 @@ class VectorStore:
     def agregar(self, embs: np.ndarray, metas: List[Dict[str, Any]]) -> None:
         """
         Añade nuevos embeddings y sus metadatos al almacén.
+        Los embeddings se normalizan a L2 para optimizar búsquedas de similitud de coseno.
         
         Args:
             embs: Array de numpy con los embeddings (n, dim)
@@ -34,8 +36,10 @@ class VectorStore:
         """
         if len(embs) != len(metas):
             raise ValueError("El número de embeddings debe coincidir con el de metadatos")
-            
-        self.embeddings.extend(embs.tolist())
+        
+        # Normalizar embeddings a L2 para optimizar similitud de coseno
+        embs_normalized = normalize(embs, norm='l2')
+        self.embeddings.extend(embs_normalized.tolist())
         self.metadatos.extend(metas)
 
     def buscar(self, consulta_emb: np.ndarray, top_k: int = 3) -> List[Dict[str, Any]]:
@@ -118,6 +122,3 @@ class VectorStore:
             raise FileNotFoundError(f"No se encontró el archivo {ruta}") from e
         except Exception as e:
             raise ValueError(f"Error al cargar el archivo {ruta}: {str(e)}") from e
-            embs = np.array(self.embeddings).astype('float32')
-            faiss.normalize_L2(embs)
-            self.index.add(embs)

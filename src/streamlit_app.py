@@ -2,9 +2,10 @@
 import os
 import streamlit as st
 from pathlib import Path
-from src.agentes.agente_extraccion import AgenteExtraccion
-from src.agentes.agente_analisis import AgenteAnalisis
-from src.agentes.agente_respuesta import AgenteRespuesta
+from dotenv import load_dotenv
+from src.langchain_orquestador import LangChainOrquestador
+
+load_dotenv()
 
 # Configuración de la página
 st.set_page_config(page_title="🧠 Asistente de Apuntes", layout="wide")
@@ -34,6 +35,13 @@ with st.sidebar:
         help="Tamaño de los fragmentos en que se dividirán los documentos"
     )
     
+    # Modelo de embeddings
+    modelo = st.selectbox(
+        "🤖 Modelo de embeddings",
+        ["all-MiniLM-L6-v2", "all-mpnet-base-v2"],
+        help="Modelo para generar embeddings semánticos"
+    )
+    
     # Botón para indexar
     if st.button("🔄 Indexar apuntes", use_container_width=True):
         if not api_key:
@@ -44,10 +52,11 @@ with st.sidebar:
             st.error(f"❌ La carpeta {data_dir} no existe")
             st.stop()
             
-        with st.spinner("🔍 Extrayendo y creando índice..."):
+        with st.spinner("🔍 Extrayendo, creando chunks e indexando con LangChain..."):
             try:
-                extractor = AgenteExtraccion(data_dir)
-                chunks_meta = extractor.procesar(tam_chunk)
+                # Crear orquestador con LangChain
+                orchestrator = LangChainOrquestador(data_dir, modelo_name=modelo, api_key=api_key)
+                chunks_meta = orchestrator.indexar(tam_chunk)
                 
                 if not chunks_meta:
                     st.warning("⚠️ No se encontraron documentos para indexar")
@@ -63,11 +72,9 @@ with st.sidebar:
                     for doc in docs:
                         st.write(f"  - {doc}")
                 
-                analisis = AgenteAnalisis()
-                analisis.indexar_chunks(chunks_meta)
-                st.session_state["analisis"] = analisis
-                st.session_state["chunks_meta"] = chunks_meta
-                st.success("✅ Indexado completado")
+                # Guardar orquestador en sesión
+                st.session_state["orchestrator"] = orchestrator
+                st.success("✅ Indexado completado con LangChainOrquestador")
                 
             except Exception as e:
                 st.error(f"❌ Error al indexar: {str(e)}")
@@ -77,7 +84,7 @@ with st.sidebar:
 st.header("🔍 Buscar en los apuntes")
 
 # Mostrar estado actual
-if "analisis" not in st.session_state:
+if "orchestrator" not in st.session_state:
     st.warning("⚠️ Por favor, indexa los apuntes primero usando el panel lateral")
     st.stop()
 
@@ -90,28 +97,27 @@ pregunta = st.text_input(
 
 # Botón de búsqueda
 if st.button("🔍 Buscar", type="primary") and pregunta:
-    with st.spinner("🤔 Procesando tu pregunta..."):
+    with st.spinner("🤔 Procesando tu pregunta con LangChainOrquestador..."):
         try:
-            analisis = st.session_state.get("analisis")
-            fragmentos = analisis.buscar_similares(pregunta, top_k=4)
+            orchestrator = st.session_state.get("orchestrator")
             
-            if not fragmentos:
-                st.warning("No se encontraron fragmentos relevantes")
-                st.stop()
-                
+            # Usar el orquestador para consultar
+            respuesta = orchestrator.consultar(pregunta, top_k=4)
+            
             # Mostrar respuesta
             with st.container():
                 st.subheader("💡 Respuesta")
-                with st.spinner("Generando respuesta..."):
-                    sr = AgenteRespuesta(api_key)
-                    respuesta = sr.generar_respuesta(pregunta, fragmentos)
-                    st.markdown(f"{respuesta}")
+                st.markdown(f"{respuesta}")
             
-            # Mostrar fragmentos
+            # Mostrar fragmentos usados (desde el store del orquestador)
             with st.expander("📚 Ver fragmentos usados", expanded=False):
-                for f in fragmentos:
+                fragmentos = orchestrator.search_tool._run(pregunta, top_k=4)
+                import json
+                fragmentos_list = json.loads(fragmentos)
+                for f in fragmentos_list:
                     st.markdown(f"### 📄 {f['documento']} (Chunk {f['chunk_id'] + 1})")
                     st.markdown(f"```\n{f['texto']}\n```")
+                    st.write(f"Similitud: {f['score']:.2%}")
                     st.write("---")
                     
         except Exception as e:

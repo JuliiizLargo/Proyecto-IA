@@ -10,7 +10,8 @@ class EmbeddingModel:
 
     def embedir(self, textos: List[str]) -> np.ndarray:
         """
-        Retorna un array numpy de shape (n_textos, dimension)
+        Retorna un array numpy de shape (n_textos, dimension).
+        Los embeddings se normalizan internamente a L2 en VectorStore.agregar() para optimizar similitud de coseno.
         """
         embs = self.model.encode(textos, show_progress_bar=True, convert_to_numpy=True)
-        return np.array(embs)
+        return np.array(embs, dtype=np.float32)

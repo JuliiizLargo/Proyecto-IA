@@ -1,127 +1,162 @@
-# 🧠 Asistente de Búsqueda de Apuntes  
+# 🧠 Asistente Multiagente de Búsqueda de Apuntes  
 **Proyecto Final – Introducción a la Inteligencia Artificial**
 
-Este proyecto implementa un asistente que permite **buscar información dentro de apuntes o documentos (PDF, TXT, imágenes)** utilizando técnicas de **Inteligencia Artificial**. El sistema está compuesto por tres agentes principales que trabajan en conjunto para proporcionar respuestas precisas basadas en los documentos proporcionados.
+Este proyecto implementa un **asistente inteligente y moderno** que permite buscar información dentro de apuntes o documentos (PDF, TXT, imágenes) utilizando técnicas de **Inteligencia Artificial** y **orquestación multiagente con LangChain**.
 
 ## 🚀 Características principales
 
-- Extracción de texto de múltiples formatos: **PDF, TXT, PNG, JPG/JPEG**
-- **OCR integrado** con Tesseract para procesamiento de imágenes
-- **Segmentación inteligente** de documentos en chunks manejables
-- Generación de **embeddings** con modelos pre-entrenados
-- Búsqueda por **similitud semántica**
-- **Base de datos vectorial** para búsquedas eficientes
-- Generación de respuestas con **Gemini (Google Generative AI)**
-- Interfaz **CLI y Streamlit**
+- ✅ Extracción inteligente de texto: **PDF, TXT, PNG, JPG/JPEG**
+- ✅ **OCR integrado** con Tesseract para procesamiento de imágenes
+- ✅ **Segmentación inteligente** con chunks y overlap
+- ✅ **Embeddings semánticos** con `sentence-transformers` (`all-MiniLM-L6-v2`)
+- ✅ Búsqueda por **similitud de coseno**
+- ✅ **Base de datos vectorial** con persistencia automática
+- ✅ **Orquestación con LangChain:** SearchTool + AnswerTool
+- ✅ Respuestas con **Google Generative AI (Gemini)**
+- ✅ Interfaz **CLI** e **Streamlit**
 
-## 🏗️ Arquitectura del Sistema
+## 🏗️ Arquitectura
 
-### Agentes Principales
+### 3 Agentes Principales
 
-1. **Agente de Extracción**
-   - Extrae texto de diferentes formatos de archivo
-   - Soporta PDF, TXT e imágenes (con OCR)
-   - Divide el contenido en fragmentos manejables
+1. **Agente de Extracción** (`src/agentes/agente_extraccion.py`)
+   - Lee PDF, TXT, imágenes con OCR
+   - Limpia y normaliza texto
 
-2. **Agente de Análisis**
-   - Genera embeddings del texto
-   - Almacena y gestiona los vectores de los documentos
-   - Realiza búsquedas semánticas
+2. **Agente de Análisis** (`src/agentes/agente_analisis.py`)
+   - Genera embeddings semánticos
+   - Gestiona VectorStore con persistencia automática
 
-3. **Agente de Respuesta**
-   - Genera respuestas utilizando Google's Gemini
-   - Combina la pregunta con el contexto relevante
-   - Proporciona respuestas precisas y contextuales
+3. **Agente de Respuesta** (`src/agentes/agente_respuesta.py`)
+   - Genera respuestas con Gemini
 
-## �️ Instalación
+### Orquestación LangChain (`src/langchain_orquestador.py`)
+- SearchTool + AnswerTool coordinados
+- Métodos: `indexar()` y `consultar()`
 
-### Requisitos del sistema
+## ⚙️ Instalación Rápida
 
-- Python 3.8 o superior
-- Tesseract OCR instalado en el sistema
-- API Key de Google AI (para Gemini)
+```bash
+# 1. Crear y activar entorno
+python -m venv venv
+.\venv\Scripts\activate  # Windows
+# source venv/bin/activate  # macOS/Linux
 
-### Pasos de instalación
+# 2. Instalar dependencias
+pip install -r requirements.txt
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone https://github.com/tu-usuario/proyecto-ia-apuntes.git
-   cd proyecto-ia-apuntes
-   ```
+# 3. Configurar .env
+copy .env.example .env
+# Editar .env: GOOGLE_API_KEY=tu_clave
 
-2. **Crear y activar un entorno virtual (recomendado)**
-   ```bash
-   python -m venv venv
-   .\venv\Scripts\activate  # En Windows
-   ```
-
-3. **Instalar dependencias**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Instalar Tesseract OCR**
-   - Descargar e instalar desde: https://github.com/UB-Mannheim/tesseract/wiki
-   - Asegurarse de agregar Tesseract al PATH del sistema
-
-5. **Configurar variables de entorno**
-   - Copiar el archivo `.env.example` a `.env`
-   - Agregar tu API Key de Google AI:
-     ```
-     GOOGLE_API_KEY=tu_api_key_aquí
-     ```
+# 4. (Opcional) Instalar Tesseract
+# Windows: https://github.com/UB-Mannheim/tesseract/wiki
+# Ubuntu: sudo apt-get install tesseract-ocr
+# macOS: brew install tesseract
+```
 
 ## 🚀 Uso
 
-### Interfaz de Línea de Comandos (CLI)
-
+### CLI Interactiva para pruebas rapidas (Recomendado)
 ```bash
-# Procesar documentos en la carpeta data/
-python main.py --process
-
-# Realizar una consulta
-python main.py --query "Tu pregunta aquí"
+python run_langchain.py
+# O: python run_langchain.py --data data/apuntes/ --api_key TU_CLAVE
 ```
 
-### Interfaz Web con Streamlit
-
+### Interfaz Web (Streamlit)
 ```bash
-streamlit run app.py
+streamlit run src/streamlit_app.py
+# Abre http://localhost:8501
 ```
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura
 
 ```
 proyecto-ia-apuntes/
-├── data/                   # Carpeta para documentos de entrada
+├── data/apuntes/                # 📄 Documentos (TXT, PDF, IMG)
 ├── src/
-│   ├── agentes/           # Agentes del sistema
-│   │   ├── agente_extraccion.py
-│   │   ├── agente_analisis.py
-│   │   └── agente_respuesta.py
-│   └── core/              # Módulos principales
-│       ├── chunking.py
-│       ├── embeddings.py
-│       └── vector_store.py
-├── .env.example          # Plantilla de variables de entorno
-├── requirements.txt      # Dependencias
-├── main.py               # Punto de entrada CLI
-└── app.py               # Aplicación Streamlit
+│   ├── app.py                   # CLI principal
+│   ├── streamlit_app.py         # UI web
+│   ├── langchain_orquestador.py # ✨ Orquestador LangChain
+│   ├── agentes/
+│   └── core/
+├── docs/
+│   └── Documento_Tecnico.md     # 📋 Documentación completa
+├── .env.example
+├── requirements.txt
+└── run_langchain.py
 ```
 
-## 📝 Dependencias Principales
+## 📚 Datos de Ejemplo
 
-- **PyPDF2**: Procesamiento de archivos PDF
-- **Pillow & Pytesseract**: Procesamiento de imágenes y OCR
-- **sentence-transformers**: Generación de embeddings
-- **google-generativeai**: Integración con Google's Gemini
-- **streamlit**: Interfaz web interactiva
-- **python-dotenv**: Manejo de variables de entorno
+Incluye 3 documentos en `data/apuntes/`:
+- **introduccion_ia.txt** (~1200 palabras)
+- **redes_neuronales.txt** (~1400 palabras)  
+- **aprendizaje_automatico.txt** (~1200 palabras)
+
+Para agregar más, copia archivos `.txt` o `.pdf` en `data/apuntes/`.
+
+## 📖 Documentación Técnica
+
+👉 **Leer: [`docs/Documento_Tecnico.md`](docs/Documento_Tecnico.md)**
+
+Incluye:
+- Problema a resolver
+- Metodología y flujo de datos
+- Arquitectura de agentes
+- Tecnologías y justificación
+- Resultados y aprendizajes
+
+## 🔧 Configuración Avanzada
+
+### Cambiar Modelo de Embeddings
+```bash
+python run_langchain.py --modelo all-mpnet-base-v2
+```
+
+### Ajustar Tamaño de Chunks
+```bash
+python run_langchain.py --chunk 200  # Chunks pequeños
+python run_langchain.py --chunk 500  # Chunks grandes
+```
+
+### Variables de Entorno (.env)
+```bash
+GOOGLE_API_KEY=tu_clave_aquí
+VECTOR_STORE_PATH=./data/vector_store.pkl
+TESSERACT_CMD=/usr/bin/tesseract  # Opcional
+```
+
+## 🧪 Solución de Problemas
+
+**P: "No se encuentra GOOGLE_API_KEY"**  
+R: Crea `.env` o pasa `--api_key TU_CLAVE`
+
+**P: "Tesseract no encontrado"**  
+R: Instala según tu SO (ver sección Instalación)
+
+**P: "Respuestas genéricas"**  
+R: Verifica documentos, reduce chunks, aumenta top_k
+
+## 📊 Rendimiento
+
+| Operación | Tiempo |
+|-----------|--------|
+| Indexación (50 chunks) | ~3-5 seg |
+| Búsqueda | ~0.1-0.2 seg |
+| Generación (Gemini) | ~1-2 seg |
+| **Total por consulta** | **~2-3 seg** |
 
 ## 🤝 Contribución
 
-Las contribuciones son bienvenidas. Por favor, abre un issue primero para discutir los cambios propuestos.
+Las contribuciones son bienvenidas. Abre un issue primero.
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+Licencia MIT.
+
+---
+
+**Proyecto Final:** Introducción a la Inteligencia Artificial  
+**Institución:** Tecnología en Desarrollo de Software  
+**Noviembre 2025**

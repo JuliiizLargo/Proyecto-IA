@@ -5,10 +5,7 @@ PyPDF2>=3.0.0
 pillow>=9.0.0
 pytesseract>=0.3.10
 
-# Machine learning (versión ligera de PyTorch)
-torch>=2.0.0 --index-url https://download.pytorch.org/whl/cpu
-
-# Procesamiento de texto
+# Procesamiento de texto y embeddings
 sentence-transformers>=2.2.2
 numpy>=1.21
 scikit-learn>=1.0
@@ -21,3 +18,5 @@ streamlit>=1.20.0
 
 # Manejo de variables de entorno
 python-dotenv>=1.0.0
+# Orquestación
+langchain>=0.0.365
